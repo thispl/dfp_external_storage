@@ -206,6 +206,7 @@ class DFPExternalStorageFile(File):
 		return self._dfp_external_storage_client
 
 	def dfp_external_storage_upload_file(self):
+		
 		if not self.dfp_external_storage_doc.enabled:
 			return False
 		if self.is_folder:
@@ -220,12 +221,17 @@ class DFPExternalStorageFile(File):
 		# TODO: MOSTRAR MENSAJE DE SUBIENDO ARCHIVO Y CERRARLO O MOSTRAR ARCHIVO SUBIDO AL FINAL DE ESTE MÉTODO
 
 		key = f"{frappe.local.site}/{self.file_name}"
+		
+		if frappe.db.exists('File',{'dfp_external_storage_s3_key':key}):
+			file_name = "1_" + str(self.file_name)
+			key = f"{frappe.local.site}/{file_name}"
 		is_public = "/public" if not self.is_private else ""
 		local_file = frappe.local.site + is_public + self.file_url
-
+		
 		try:
 			if not os.path.exists(local_file):
 				frappe.throw(_("Local file not found"))
+			frappe.log_error(title="key",message=key)
 			with open("./" + local_file, "rb") as f:
 				self.dfp_external_storage_client.put_object(
 					bucket_name=self.dfp_external_storage_doc.bucket_name,
